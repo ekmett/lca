@@ -27,7 +27,6 @@ module Data.LCA.Online.Naive
 import Control.Applicative hiding (empty)
 import Data.Foldable hiding (toList)
 import Data.Traversable
-import Data.Monoid
 import Prelude hiding (length, null, drop)
 import qualified Prelude
 
@@ -41,7 +40,7 @@ instance Functor (Path k) where
   fmap f (Path n xs) = Path n [ (k, f a) | (k,a) <- xs]
 
 instance Foldable (Path k) where
-  foldMap f (Path n xs) = foldMap (f . snd) xs
+  foldMap f (Path _ xs) = foldMap (f . snd) xs
 
 instance Traversable (Path k) where
   traverse f (Path n xs) = Path n <$> traverse (\(k,a) -> (,) k <$> f a) xs
@@ -55,11 +54,11 @@ empty = Path 0 []
 
 -- | /O(1)/
 length :: Path k a -> Int
-length (Path n xs) = n
+length (Path n _) = n
 
 -- | /O(1)/
 null :: Path k a -> Bool
-null (Path n xs) = n == 0
+null (Path n _) = n == 0
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
 cons :: k -> a -> Path k a -> Path k a
@@ -73,7 +72,7 @@ keep k p@(Path n xs)
 
 -- | /O(k)/ to @drop k@ elements from a path
 drop :: Int -> Path k a -> Path k a
-drop k p@(Path n xs)
+drop k (Path n xs)
   | k >= n    = empty
   | otherwise = Path (n - k) (Prelude.drop k xs)
 
@@ -89,7 +88,7 @@ lca xs ys = case compare nxs nys of
 
 -- | invariant: both paths have the same number of elements
 lca' :: Eq k => Int -> [(k,a)] -> [(k,b)] -> Path k a
-lca' k xss@((i,_):xs) yss@((j,_):ys)
+lca' k xss@((i,_):xs) ((j,_):ys)
   | i == j    = Path k xss
   | otherwise = lca' (k - 1) xs ys
 lca' _ _ _ = empty

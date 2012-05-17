@@ -52,10 +52,10 @@ instance Functor (Path k) where
 
 instance Foldable (Path k) where
   foldMap _ Nil = mempty
-  foldMap f (Cons n k t ts) = foldMap f t `mappend` foldMap f ts
+  foldMap f (Cons _ _ t ts) = foldMap f t `mappend` foldMap f ts
 
 instance Traversable (Path k) where
-  traverse f Nil = pure Nil
+  traverse _ Nil = pure Nil
   traverse f (Cons n k t ts) = Cons n k <$> traverse f t <*> traverse f ts
 
 -- | Complete binary trees
@@ -84,7 +84,7 @@ toList (Cons _ _ t ts) = go t (toList ts) where
   go (Bin k a l r) xs = (k,a) : go l (go r xs)
 
 traverseWithKey :: Applicative f => (k -> a -> f b) -> Path k a -> f (Path k b)
-traverseWithKey f Nil = pure Nil
+traverseWithKey _ Nil = pure Nil
 traverseWithKey f (Cons n k t ts) = Cons n k <$> traverseTreeWithKey f t <*> traverseWithKey f ts
 
 -- | The empty path
@@ -108,7 +108,7 @@ cons k a ts = Cons (length ts + 1) 1 (Tip k a) ts
 
 -- | /O(log (h - k))/ to @keep k@ elements of path of height @h@
 keep :: Int -> Path k a -> Path k a
-keep k Nil = Nil
+keep _ Nil = Nil
 keep k xs@(Cons n w t ts)
   | k >= n    = xs
   | otherwise = case compare k (n - w) of
@@ -146,7 +146,7 @@ consT :: Int -> Tree k a -> Path k a -> Path k a
 consT w t ts = Cons (w + length ts) w t ts
 
 keepT :: Int -> Int -> Tree k a -> Path k a -> Path k a
-keepT n w (Bin k a l r) ts = case compare n w2 of
+keepT n w (Bin _ _ l r) ts = case compare n w2 of
   LT              -> keepT n w2 r ts
   EQ              -> consT w2 r ts
   GT | n == w - 1 -> consT w2 l (consT w2 r ts)
@@ -159,20 +159,19 @@ sameT xs ys = root xs == root ys
 
 -- | invariant: both paths have the same number of elements and the same shape
 lca' :: Eq k => Path k a -> Path k b -> Path k a
-lca' Nil Nil = Nil
 lca' h@(Cons _ w x xs) (Cons _ _ y ys)
   | sameT x y = h
   | xs ~= ys  = lcaT w x y xs
   | otherwise = lca' xs ys
-lca' _ _ = error "lca: the impossible happened"
+lca' _ _ = Nil
 
 lcaT :: Eq k => Int -> Tree k a -> Tree k b -> Path k a -> Path k a
-lcaT w (Tip i a) (Tip j _) ts = ts
-lcaT w (Bin i a la ra) (Bin j b lb rb) ts
+lcaT w (Bin _ _ la ra) (Bin _ _ lb rb) ts
   | sameT la lb = consT w2 la (consT w2 ra ts)
   | sameT ra rb = lcaT w2 la lb (consT w ra ts)
   | otherwise   = lcaT w2 ra rb ts
   where w2 = div w 2
+lcaT _ _ _ ts = ts
 
 traverseTreeWithKey :: Applicative f => (k -> a -> f b) -> Tree k a -> f (Tree k b)
 traverseTreeWithKey f (Bin k a l r) = Bin k <$> f k a <*> traverseTreeWithKey f l <*> traverseTreeWithKey f r
