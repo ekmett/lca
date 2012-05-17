@@ -41,10 +41,10 @@ import Prelude hiding (length, null, drop)
 -- | Compressed paths using skew binary random access lists
 data Path k a
   = Nil
-  | Cons {-# UNPACK #-} !Int -- ^ the number of elements @n@ in this entire skew list
-         {-# UNPACK #-} !Int -- ^ the number of elements @w@ in this binary tree node
-         (Tree k a)          -- ^ a complete binary tree @t@ of with @w@ elements
-         (Path k a)          -- ^ @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
+  | Cons {-# UNPACK #-} !Int -- the number of elements @n@ in this entire skew list
+         {-# UNPACK #-} !Int -- the number of elements @w@ in this binary tree node
+         (Tree k a)          -- a complete binary tree @t@ of with @w@ elements
+         (Path k a)          -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
   deriving (Show, Read)
 
 instance Functor (Path k) where
