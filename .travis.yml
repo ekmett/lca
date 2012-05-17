@@ -1,1 +1,2 @@
 language: haskell
+after_script: cabal haddock
