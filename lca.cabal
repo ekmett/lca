@@ -1,0 +1,32 @@
+name:          lca
+category:      Data Structures
+version:       0.1
+license:       BSD3
+cabal-version: >= 1.6
+license-file:  LICENSE
+author:        Edward A. Kmett
+maintainer:    Edward A. Kmett <ekmett@gmail.com>
+stability:     provisional
+homepage:      http://github.com/ekmett/lca/
+bug-reports:   http://github.com/ekmett/lca/issues
+copyright:     Copyright (C) 2011-2012 Edward A. Kmett,
+synopsis:      Logarithmic online lowest common ancestor calculation
+description:   Logarithmic online lowest common ancestor calculation
+build-type:    Simple
+extra-source-files: .travis.yml
+
+source-repository head
+  type: git
+  location: git://github.com/ekmett/lca.git
+
+library
+  other-extensions: CPP
+
+  build-depends:
+    base         >= 4       && < 5
+
+  exposed-modules:
+    Data.LCA.Online
+    Data.LCA.Online.Naive
+
+  ghc-options: -Wall
