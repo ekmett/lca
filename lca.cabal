@@ -1,5 +1,5 @@
 name:          lca
-category:      Data Structures
+category:      Algorithms, Data Structures
 version:       0.1
 license:       BSD3
 cabal-version: >= 1.6
@@ -21,7 +21,6 @@ source-repository head
   location: git://github.com/ekmett/lca.git
 
 library
-  other-extensions: CPP
   hs-source-dirs: src
 
   build-depends:
@@ -31,4 +30,4 @@ library
     Data.LCA.Online
     Data.LCA.Online.Naive
 
-  ghc-options: -Wall
+  ghc-options: -Wall -O2 -fspec-constr

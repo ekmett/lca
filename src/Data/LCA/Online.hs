@@ -19,7 +19,6 @@
 module Data.LCA.Online
   ( Path
   , empty
-  , toList
   , cons
   , null
   , length
@@ -28,6 +27,8 @@ module Data.LCA.Online
   , keep
   , drop
   , traverseWithKey
+  , toList
+  , fromList
   , (~=)
   ) where
 
@@ -82,6 +83,10 @@ toList Nil = []
 toList (Cons _ _ t ts) = go t (toList ts) where
   go (Tip k a) xs     = (k,a) : xs
   go (Bin k a l r) xs = (k,a) : go l (go r xs)
+
+fromList :: [(k,a)] -> Path k a
+fromList [] = Nil
+fromList ((k,a):xs) = cons k a (fromList xs)
 
 traverseWithKey :: Applicative f => (k -> a -> f b) -> Path k a -> f (Path k b)
 traverseWithKey _ Nil = pure Nil
