@@ -39,7 +39,7 @@ toList :: Path k a -> [(k,a)]
 toList (Path _ xs) = xs
 
 fromList :: [(k,a)] -> Path k a
-fromList xs = Path (length xs) xs
+fromList xs = Path (Prelude.length xs) xs
 
 instance Functor (Path k) where
   fmap f (Path n xs) = Path n [ (k, f a) | (k,a) <- xs]
