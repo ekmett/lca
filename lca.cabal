@@ -21,6 +21,7 @@ source-repository head
 
 library
   other-extensions: CPP
+  hs-source-dirs: src
 
   build-depends:
     base         >= 4       && < 5

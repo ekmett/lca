@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.LCA.Online
--- Copyright   :  (C) 2011-2012 Edward Kmett,
+-- Copyright   :  (C) 2011-2012 Edward Kmett
 -- License     :  BSD-style (see the file LICENSE)
 --
 -- Maintainer  :  Edward Kmett <ekmett@gmail.com>
@@ -19,6 +19,7 @@
 module Data.LCA.Online
   ( Path
   , empty
+  , toList
   , cons
   , null
   , length
@@ -30,14 +31,13 @@ module Data.LCA.Online
   , (~=)
   ) where
 
-import Control.Applicative
-import Data.Foldable
+import Control.Applicative hiding (empty)
+import Data.Foldable hiding (toList)
 import Data.Traversable
 import Data.Monoid
-import Prelude hiding (length, null)
+import Prelude hiding (length, null, drop)
 
--- TODO: would a zeroless skew binary random access list reduce bookkeeping overhead?
-
+-- | Compressed paths using skew binary random access lists
 data Path k a
   = Nil
   | Cons {-# UNPACK #-} !Int -- ^ the number of elements @n@ in this entire skew list
@@ -77,9 +77,15 @@ instance Traversable (Tree k) where
   traverse f (Bin n a l r) = Bin n <$> f a <*> traverse f l <*> traverse f r
   traverse f (Tip n a) = Tip n <$> f a
 
+toList :: Path k a -> [(k,a)]
+toList Nil = []
+toList (Cons _ _ t ts) = go t (toList ts) where
+  go (Tip k a) xs     = (k,a) : xs
+  go (Bin k a l r) xs = (k,a) : go l (go r xs)
+
 traverseWithKey :: Applicative f => (k -> a -> f b) -> Path k a -> f (Path k b)
 traverseWithKey f Nil = pure Nil
-traverseWithKey f (Cons n k t ts) = Cons n k <$> traverseTreeWithKey f t <*> traverseWithKey f t
+traverseWithKey f (Cons n k t ts) = Cons n k <$> traverseTreeWithKey f t <*> traverseWithKey f ts
 
 -- | The empty path
 empty :: Path k a
@@ -128,7 +134,6 @@ lca xs ys = case compare nxs nys of
 isAncestorOf :: Eq k => Path k a -> Path k b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
 
-
 infix 4 ~=
 -- | /O(1)/ Compare to see if two trees have the same leaf key
 (~=) :: Eq k => Path k a -> Path k b -> Bool
@@ -171,7 +176,7 @@ lcaT w (Bin i a la ra) (Bin j b lb rb) ts
 
 traverseTreeWithKey :: Applicative f => (k -> a -> f b) -> Tree k a -> f (Tree k b)
 traverseTreeWithKey f (Bin k a l r) = Bin k <$> f k a <*> traverseTreeWithKey f l <*> traverseTreeWithKey f r
-traverseTreeWithKey f (Tip k a)     = Tip k <*> f k a
+traverseTreeWithKey f (Tip k a)     = Tip k <$> f k a
 
 -- | /O(1)/
 root :: Tree k a -> k
