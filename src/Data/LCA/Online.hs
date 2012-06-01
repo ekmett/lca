@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Provides online calculation of the the lowest common ancestor in /O(log h)/
--- by compressing the spine of the paths using a skew binary random access
+-- by compressing the spine of the paths using a skew-binary random access
 -- list.
 --
 -- Algorithms used here assume that the key values chosen for @k@ are
@@ -39,80 +39,80 @@ import Data.Monoid
 import Prelude hiding (length, null, drop)
 
 -- | Compressed paths using skew binary random access lists
-data Path k a
+data Path a
   = Nil
   | Cons {-# UNPACK #-} !Int -- the number of elements @n@ in this entire skew list
          {-# UNPACK #-} !Int -- the number of elements @w@ in this binary tree node
-         (Tree k a)          -- a complete binary tree @t@ of with @w@ elements
-         (Path k a)          -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
+         (Tree a)          -- a complete binary tree @t@ of with @w@ elements
+         (Path a)          -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
   deriving (Show, Read)
 
-instance Functor (Path k) where
+instance Functor Path where
   fmap _ Nil = Nil
   fmap f (Cons n k t ts) = Cons n k (fmap f t) (fmap f ts)
 
-instance Foldable (Path k) where
+instance Foldable Path where
   foldMap _ Nil = mempty
   foldMap f (Cons _ _ t ts) = foldMap f t `mappend` foldMap f ts
 
-instance Traversable (Path k) where
+instance Traversable Path where
   traverse _ Nil = pure Nil
   traverse f (Cons n k t ts) = Cons n k <$> traverse f t <*> traverse f ts
 
 -- | Complete binary trees
 -- NB: we could ensure the complete tree invariant
-data Tree k a
-  = Bin k a (Tree k a) (Tree k a)
-  | Tip k a
+data Tree a
+  = Bin {-# UNPACK #-} !Int a (Tree a) (Tree a)
+  | Tip {-# UNPACK #-} !Int a
   deriving (Show, Read)
 
-instance Functor (Tree k) where
+instance Functor Tree where
   fmap f (Bin n a l r) = Bin n (f a) (fmap f l) (fmap f r)
   fmap f (Tip n a)     = Tip n (f a)
 
-instance Foldable (Tree k) where
+instance Foldable Tree where
   foldMap f (Bin _ a l r) = f a `mappend` foldMap f l `mappend` foldMap f r
   foldMap f (Tip _ a)     = f a
 
-instance Traversable (Tree k) where
+instance Traversable Tree where
   traverse f (Bin n a l r) = Bin n <$> f a <*> traverse f l <*> traverse f r
   traverse f (Tip n a) = Tip n <$> f a
 
-toList :: Path k a -> [(k,a)]
+toList :: Path a -> [(Int,a)]
 toList Nil = []
 toList (Cons _ _ t ts) = go t (toList ts) where
   go (Tip k a) xs     = (k,a) : xs
   go (Bin k a l r) xs = (k,a) : go l (go r xs)
 
-fromList :: [(k,a)] -> Path k a
+fromList :: [(Int,a)] -> Path a
 fromList [] = Nil
 fromList ((k,a):xs) = cons k a (fromList xs)
 
-traverseWithKey :: Applicative f => (k -> a -> f b) -> Path k a -> f (Path k b)
+traverseWithKey :: Applicative f => (Int -> a -> f b) -> Path a -> f (Path b)
 traverseWithKey _ Nil = pure Nil
 traverseWithKey f (Cons n k t ts) = Cons n k <$> traverseTreeWithKey f t <*> traverseWithKey f ts
 
 -- | The empty path
-empty :: Path k a
+empty :: Path a
 empty = Nil
 
 -- | /O(1)/
-length :: Path k a -> Int
+length :: Path a -> Int
 length Nil = 0
 length (Cons n _ _ _) = n
 
 -- | /O(1)/
-null :: Path k a -> Bool
+null :: Path a -> Bool
 null Nil = True
 null _ = False
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
-cons :: k -> a -> Path k a -> Path k a
+cons :: Int -> a -> Path a -> Path a
 cons k a (Cons n w t (Cons _ w' t2 ts)) | w == w' = Cons (n + 1) (2 * w + 1) (Bin k a t t2) ts
 cons k a ts = Cons (length ts + 1) 1 (Tip k a) ts
 
 -- | /O(log (h - k))/ to @keep k@ elements of path of height @h@
-keep :: Int -> Path k a -> Path k a
+keep :: Int -> Path a -> Path a
 keep _ Nil = Nil
 keep k xs@(Cons n w t ts)
   | k >= n    = xs
@@ -122,11 +122,11 @@ keep k xs@(Cons n w t ts)
     LT -> keep k ts
 
 -- | /O(log k)/ to @drop k@ elements from a path
-drop :: Int -> Path k a -> Path k a
+drop :: Int -> Path a -> Path a
 drop k xs = keep (length xs - k) xs
 
 -- | /O(log h)/ Compute the lowest common ancestor
-lca :: Eq k => Path k a -> Path k b -> Path k a
+lca :: Path a -> Path b -> Path a
 lca xs ys = case compare nxs nys of
     LT -> lca' xs (keep nxs ys)
     EQ -> lca' xs ys
@@ -136,21 +136,21 @@ lca xs ys = case compare nxs nys of
     nys = length ys
 
 -- /O(log h)/ @xs `isAncestorOf` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
-isAncestorOf :: Eq k => Path k a -> Path k b -> Bool
+isAncestorOf :: Path a -> Path b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
 
 infix 4 ~=
 -- | /O(1)/ Compare to see if two trees have the same leaf key
-(~=) :: Eq k => Path k a -> Path k b -> Bool
+(~=) :: Path a -> Path b -> Bool
 Nil          ~= Nil          = True
 Cons _ _ s _ ~= Cons _ _ t _ = sameT s t
 _            ~= _            = False
 
 -- * Utilities
-consT :: Int -> Tree k a -> Path k a -> Path k a
+consT :: Int -> Tree a -> Path a -> Path a
 consT w t ts = Cons (w + length ts) w t ts
 
-keepT :: Int -> Int -> Tree k a -> Path k a -> Path k a
+keepT :: Int -> Int -> Tree a -> Path a -> Path a
 keepT n w (Bin _ _ l r) ts = case compare n w2 of
   LT              -> keepT n w2 r ts
   EQ              -> consT w2 r ts
@@ -159,18 +159,18 @@ keepT n w (Bin _ _ l r) ts = case compare n w2 of
   where w2 = div w 2
 keepT _ _ _ ts = ts
 
-sameT :: Eq k => Tree k a -> Tree k b -> Bool
+sameT :: Tree a -> Tree b -> Bool
 sameT xs ys = root xs == root ys
 
 -- | invariant: both paths have the same number of elements and the same shape
-lca' :: Eq k => Path k a -> Path k b -> Path k a
+lca' :: Path a -> Path b -> Path a
 lca' h@(Cons _ w x xs) (Cons _ _ y ys)
   | sameT x y = h
   | xs ~= ys  = lcaT w x y xs
   | otherwise = lca' xs ys
 lca' _ _ = Nil
 
-lcaT :: Eq k => Int -> Tree k a -> Tree k b -> Path k a -> Path k a
+lcaT :: Int -> Tree a -> Tree b -> Path a -> Path a
 lcaT w (Bin _ _ la ra) (Bin _ _ lb rb) ts
   | sameT la lb = consT w2 la (consT w2 ra ts)
   | sameT ra rb = lcaT w2 la lb (consT w ra ts)
@@ -178,11 +178,11 @@ lcaT w (Bin _ _ la ra) (Bin _ _ lb rb) ts
   where w2 = div w 2
 lcaT _ _ _ ts = ts
 
-traverseTreeWithKey :: Applicative f => (k -> a -> f b) -> Tree k a -> f (Tree k b)
+traverseTreeWithKey :: Applicative f => (Int -> a -> f b) -> Tree a -> f (Tree b)
 traverseTreeWithKey f (Bin k a l r) = Bin k <$> f k a <*> traverseTreeWithKey f l <*> traverseTreeWithKey f r
 traverseTreeWithKey f (Tip k a)     = Tip k <$> f k a
 
 -- | /O(1)/
-root :: Tree k a -> k
+root :: Tree a -> Int
 root (Tip k _)     = k
 root (Bin k _ _ _) = k

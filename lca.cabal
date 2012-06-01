@@ -1,6 +1,6 @@
 name:          lca
 category:      Algorithms, Data Structures
-version:       0.1.0.1
+version:       0.2
 license:       BSD3
 cabal-version: >= 1.6
 license-file:  LICENSE
@@ -10,8 +10,8 @@ stability:     provisional
 homepage:      http://github.com/ekmett/lca/
 bug-reports:   http://github.com/ekmett/lca/issues
 copyright:     Copyright (C) 2011-2012 Edward A. Kmett
-synopsis:      O(log n) online lowest common ancestor calculation
-description:   O(log n) online lowest common ancestor calculation
+synopsis:      O(log n) persistent on-line lowest common ancestor calculation without preprocessing
+description:   O(log n) persistent on-line lowest common ancestor calculation without preprocessing
 build-type:    Simple
 
 extra-source-files: .travis.yml
