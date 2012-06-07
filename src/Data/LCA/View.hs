@@ -16,7 +16,7 @@ instance Functor f => Functor (View f) where
 
 instance Foldable f => Foldable (View f) where
   foldMap _ Root = mempty
-  foldMap f (Node _ a as) = f a <> foldMap f as
+  foldMap f (Node _ a as) = f a `mappend` foldMap f as
 
 instance Traversable f => Traversable (View f) where
   traverse _ Root = pure Root
