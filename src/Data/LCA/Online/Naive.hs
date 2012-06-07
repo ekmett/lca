@@ -14,6 +14,8 @@ module Data.LCA.Online.Naive
   ( Path
   , empty
   , cons
+  , uncons
+  , view
   , null
   , length
   , isAncestorOf
@@ -31,15 +33,18 @@ import Data.Foldable hiding (toList)
 import Data.Traversable
 import Prelude hiding (length, null, drop)
 import qualified Prelude
+import Data.LCA.View
 
 data Path a = Path {-# UNPACK #-} !Int [(Int,a)]
   deriving (Show, Read)
 
 toList :: Path a -> [(Int,a)]
 toList (Path _ xs) = xs
+{-# INLINE toList #-}
 
 fromList :: [(Int,a)] -> Path a
 fromList xs = Path (Prelude.length xs) xs
+{-# INLINE fromList #-}
 
 instance Functor Path where
   fmap f (Path n xs) = Path n [ (k, f a) | (k,a) <- xs]
@@ -52,6 +57,7 @@ instance Traversable Path where
 
 traverseWithKey :: Applicative f => (Int -> a -> f b) -> Path a -> f (Path b)
 traverseWithKey f (Path n xs) = Path n <$> traverse (\(k,a) -> (,) k <$> f k a) xs
+{-# INLINE traverseWithKey #-}
 
 -- | The empty path
 empty :: Path a
@@ -60,47 +66,46 @@ empty = Path 0 []
 -- | /O(1)/
 length :: Path a -> Int
 length (Path n _) = n
+{-# INLINE length #-}
 
 -- | /O(1)/
 null :: Path a -> Bool
 null (Path n _) = n == 0
+{-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
 cons :: Int -> a -> Path a -> Path a
 cons k a (Path n xs) = Path (n + 1) $ (k,a):xs
+{-# INLINE cons #-}
+
+uncons :: Path a -> Maybe (Int, a, Path a)
+uncons (Path _ []) = Nothing
+uncons (Path n ((k,a):xs)) = Just (k,a,Path (n - 1) xs)
+{-# INLINE uncons #-}
+
+view :: Path a -> View Path a
+view (Path _ []) = Root
+view (Path n ((k,a):xs)) = Node k a (Path (n - 1) xs)
+{-# INLINE view #-}
 
 -- | /O(h - k)/ to @keep k@ elements of path of height @h@
 keep :: Int -> Path a -> Path a
 keep k p@(Path n xs)
   | k >= n    = p
   | otherwise = Path k $ Prelude.drop (n - k) xs
+{-# INLINE keep #-}
 
 -- | /O(k)/ to @drop k@ elements from a path
 drop :: Int -> Path a -> Path a
 drop k (Path n xs)
   | k >= n    = empty
   | otherwise = Path (n - k) (Prelude.drop k xs)
-
--- | /O(h)/ Compute the lowest common ancestor
-lca :: Path a -> Path b -> Path a
-lca xs ys = case compare nxs nys of
-    LT -> lca' nxs (toList xs) (toList (keep nxs ys))
-    EQ -> lca' nxs (toList xs) (toList ys)
-    GT -> lca' nys (toList (keep nys xs)) (toList ys)
-  where
-    nxs = length xs
-    nys = length ys
-
--- | invariant: both paths have the same number of elements
-lca' :: Int -> [(Int,a)] -> [(Int,b)] -> Path a
-lca' k xss@((i,_):xs) ((j,_):ys)
-  | i == j    = Path k xss
-  | otherwise = lca' (k - 1) xs ys
-lca' _ _ _ = empty
+{-# INLINE drop #-}
 
 -- /O(h)/ @xs `isAncestorOf` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
 isAncestorOf :: Path a -> Path b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
+{-# INLINE isAncestorOf #-}
 
 infix 4 ~=
 -- | /O(1)/ Compare to see if two trees have the same leaf key
@@ -108,5 +113,19 @@ infix 4 ~=
 Path _ []        ~= Path _ []        = True
 Path _ ((i,_):_) ~= Path _ ((j,_):_) = i == j
 _                ~= _                = False
+{-# INLINE (~=) #-}
 
-
+-- | /O(h)/ Compute the lowest common ancestor
+lca :: Path a -> Path b -> Path a
+lca xs0 ys0 = case compare nxs nys of
+    LT -> go nxs (toList xs0) (toList (keep nxs ys0))
+    EQ -> go nxs (toList xs0) (toList ys0)
+    GT -> go nys (toList (keep nys xs0)) (toList ys0)
+  where
+    nxs = length xs0
+    nys = length ys0
+    go k xss@((i,_):xs) ((j,_):ys)
+      | i == j    = Path k xss
+      | otherwise = go (k - 1) xs ys
+    go _ _ _ = empty
+{-# INLINE lca #-}
