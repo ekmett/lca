@@ -4,9 +4,14 @@ lca: Purely Functional On-Line Lowest Common Ancestor Search
 [![Build Status](https://secure.travis-ci.org/ekmett/lca.png?branch=master)](http://travis-ci.org/ekmett/lca)
 
 This package provides a reference implementation of my skew binary random access algorithm for performing an
-online lowest common ancestor in logarithmic time without preprocessing. This improves the previous known
+online lowest common ancestor in logarithmic time _without preprocessing_. This improves the previous known
 asymptotic bound from _O(h)_ to _O(log h)_, and importantly is completely independent of the width or overall
 size of the tree, enabling you to calculate lowest common ancestors in a distributed fashion with good locality.
+
+While algorithms exist that that provide _O(1)_ query time, they all require _O(n)_ preprocessing, where _n_ is
+the size of the entire tree, and so are less suitable for LCA search in areas such as revision control where the
+tree is constantly updated, or distributed computing, where the tree may be too large to fit in any one computer's
+memory.
 
 Slides are available as [Purely Functional Data Structures for On-Line LCA](http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search)
 
