@@ -5,7 +5,7 @@ lca: Purely Functional On-Line Lowest Common Ancestor Search
 
 This package provides a reference implementation of my skew binary random access algorithm for performing an
 online lowest common ancestor in logarithmic time without preprocessing. This improves the previous known
-asymptotic bound from /O(h)/ to /O(log h)/, and importantly is completely independent of the width or overall
+asymptotic bound from _O(h)_ to _O(log h)_, and importantly is completely independent of the width or overall
 size of the tree, enabling you to calculate lowest common ancestors in a distributed fashion with good locality.
 
 Slides are available as [Purely Functional Data Structures for On-Line LCA](http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search)
