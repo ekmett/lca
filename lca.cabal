@@ -20,7 +20,7 @@ description:
   /O(log n)/ without preprocessing and with optional monoidal annotations.
 build-type:    Simple
 
-extra-source-files: .travis.yml
+extra-source-files: .travis.yml README.md CHANGELOG.md
 
 source-repository head
   type: git
