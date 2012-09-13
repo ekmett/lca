@@ -9,12 +9,17 @@
 -- Portability :  portable
 --
 -- Provides online calculation of the the lowest common ancestor in /O(log h)/
--- by compressing the spine of the paths using a skew-binary random access
+-- by compressing the spine of a 'Path' using a skew-binary random access
 -- list.
+--
+-- This library implements the technique described in my talk
+--
+-- <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
+--
+-- to improve the known asymptotic bounds on online lowest common ancestor search.
 --
 -- Algorithms used here assume that the key values chosen for @k@ are
 -- globally unique.
---
 ----------------------------------------------------------------------------
 module Data.LCA.Online
   ( Path
@@ -41,7 +46,6 @@ import Prelude hiding (length, null, drop)
 import Data.LCA.View
 
 -- | Complete binary trees
--- NB: we could ensure the complete tree invariant
 data Tree a
   = Bin {-# UNPACK #-} !Int a (Tree a) (Tree a)
   | Tip {-# UNPACK #-} !Int a
@@ -70,8 +74,8 @@ data Path a
   = Nil
   | Cons {-# UNPACK #-} !Int -- the number of elements @n@ in this entire skew list
          {-# UNPACK #-} !Int -- the number of elements @w@ in this binary tree node
-         (Tree a)          -- a complete binary tree @t@ of with @w@ elements
-         (Path a)          -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
+         (Tree a)            -- a complete binary tree @t@ of with @w@ elements
+         (Path a)            -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
   deriving (Show, Read)
 
 instance Functor Path where
@@ -90,16 +94,19 @@ consT :: Int -> Tree a -> Path a -> Path a
 consT w t ts = Cons (w + length ts) w t ts
 {-# INLINE consT #-}
 
+-- | Convert a 'Path' to a list of @(ID, value)@ pairs.
 toList :: Path a -> [(Int,a)]
 toList Nil = []
 toList (Cons _ _ t ts) = go t (toList ts) where
   go (Tip k a) xs     = (k,a) : xs
   go (Bin k a l r) xs = (k,a) : go l (go r xs)
 
+-- | Build a 'Path' from a list of @(ID, value)@ pairs.
 fromList :: [(Int,a)] -> Path a
 fromList [] = Nil
 fromList ((k,a):xs) = cons k a (fromList xs)
 
+-- | Traverse a 'Path' with access to the node IDs.
 traverseWithKey :: Applicative f => (Int -> a -> f b) -> Path a -> f (Path b)
 traverseWithKey f = go where
   go Nil = pure Nil
@@ -108,44 +115,46 @@ traverseWithKey f = go where
   goT (Tip k a)     = Tip k <$> f k a
 {-# INLINE traverseWithKey #-}
 
--- | The empty path
+-- | The 'empty' 'Path'
 empty :: Path a
 empty = Nil
 {-# INLINE empty #-}
 
--- | /O(1)/
+-- | /O(1)/ Determine the 'length' of a 'Path'.
 length :: Path a -> Int
 length Nil = 0
 length (Cons n _ _ _) = n
 {-# INLINE length #-}
 
--- | /O(1)/
+-- | /O(1)/ Returns 'True' iff the path is 'empty'.
 null :: Path a -> Bool
 null Nil = True
 null _ = False
 {-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
+--
+-- Extend the 'Path' with a new node ID and value.
 cons :: Int -> a -> Path a -> Path a
 cons k a (Cons n w t (Cons _ w' t2 ts)) | w == w' = Cons (n + 1) (2 * w + 1) (Bin k a t t2) ts
 cons k a ts = Cons (length ts + 1) 1 (Tip k a) ts
 {-# INLINE cons #-}
 
--- | /O(1)/
+-- | /O(1)/ Extract the node ID and value from the newest node on the 'Path'.
 uncons :: Path a -> Maybe (Int, a, Path a)
 uncons Nil = Nothing
 uncons (Cons _ _ (Tip k a) ts) = Just (k, a, ts)
 uncons (Cons _ w (Bin k a l r) ts) = Just (k, a, consT w2 l (consT w2 r ts)) where w2 = div w 2
 {-# INLINE uncons #-}
 
--- | /O(1)/
+-- | /O(1)/ Extract the node ID and value from the newest node on the 'Path', slightly faster than 'uncons'.
 view :: Path a -> View Path a
 view Nil = Root
 view (Cons _ _ (Tip k a) ts) = Node k a ts
 view (Cons _ w (Bin k a l r) ts) = Node k a (consT w2 l (consT w2 r ts)) where w2 = div w 2
 {-# INLINE view #-}
 
--- | /O(log (h - k))/ to @keep k@ elements of path of height @h@
+-- | /O(log (h - k))/ to @'keep' k@ elements of 'Path' of 'length' @h@
 keep :: Int -> Path a -> Path a
 keep = go where
   go _ Nil = Nil
@@ -164,12 +173,12 @@ keep = go where
   goT _ _ _ ts = ts
 {-# INLINE keep #-}
 
--- | /O(log k)/ to @drop k@ elements from a path
+-- | /O(log k)/ to @'drop' k@ elements from a 'Path'
 drop :: Int -> Path a -> Path a
 drop k xs = keep (length xs - k) xs
 {-# INLINE drop #-}
 
--- | /O(log h)/ @xs `isAncestorOf` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
+-- | /O(log h)/ @xs `isAncestorOf` ys@ holds when @xs@ is a prefix starting at the root of 'Path' @ys@.
 isAncestorOf :: Path a -> Path b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
 {-# INLINE isAncestorOf #-}
@@ -182,7 +191,7 @@ Cons _ _ s _ ~= Cons _ _ t _ = sameT s t
 _            ~= _            = False
 {-# INLINE (~=) #-}
 
--- | /O(log h)/ Compute the lowest common ancestor
+-- | /O(log h)/ Compute the lowest common ancestor of two paths.
 lca :: Path a -> Path b -> Path a
 lca xs0 ys0 = case compare nxs nys of
     LT -> go xs0 (keep nxs ys0)

@@ -1,3 +1,13 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.LCA.View
+-- Copyright   :  (C) 2012 Edward Kmett
+-- License     :  BSD-style (see the file LICENSE)
+-- Maintainer  :  Edward Kmett <ekmett@gmail.com>
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
 module Data.LCA.View (View(..)) where
 
 import Control.Applicative
@@ -5,6 +15,7 @@ import Data.Foldable
 import Data.Traversable
 import Data.Monoid
 
+-- | Provides a consistent 'View' for peeling off the bottom node of a path.
 data View f a
   = Root
   | Node {-# UNPACK #-} !Int a (f a)

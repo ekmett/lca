@@ -46,6 +46,7 @@ infixl 6 <>
 {-# INLINE (<>) #-}
 
 -- | Complete binary trees
+--
 -- NB: we could ensure the complete tree invariant
 data Tree a
   = Bin a {-# UNPACK #-} !Int a (Tree a) (Tree a)
@@ -68,7 +69,7 @@ sameT xs ys = root xs == root ys where
   root (Tip k _)     = k
   root (Bin _ k _ _ _) = k
 
--- | Compressed paths using skew binary random access lists
+-- | A compressed 'Path' as a skew binary random access list
 data Path a
   = Nil
   | Cons a
@@ -82,6 +83,7 @@ instance Foldable Path where
   foldMap _ Nil = mempty
   foldMap f (Cons _ _ _ t ts) = foldMap f t <> foldMap f ts
 
+-- | Extract a monoidal summary of a 'Path'.
 measure :: Monoid a => Path a -> a
 measure Nil = mempty
 measure (Cons a _ _ _ _) = a
@@ -92,7 +94,8 @@ consT w t ts = Cons (measureT t <> measure ts) (w + length ts) w t ts
 consN :: Monoid a => Int -> Int -> Tree a -> Path a -> Path a
 consN n w t ts = Cons (measureT t <> measure ts) n w t ts
 
-map :: (Monoid a, Monoid b) => (a -> b) -> Path a -> Path b
+-- | /O(n)/ Re-annotate a 'Path' full of monoidal values using a different 'Monoid'.
+map :: Monoid b => (a -> b) -> Path a -> Path b
 map f = go where
   go Nil = Nil
   go (Cons _ n k t ts) = consN n k (goT t) (go ts)
@@ -100,7 +103,8 @@ map f = go where
   goT (Bin _ k a l r) = bin k (f a) (goT l) (goT r)
 {-# INLINE map #-}
 
-mapWithKey :: (Monoid a, Monoid b) => (Int -> a -> b) -> Path a -> Path b
+-- | /O(n)/ Re-annotate a 'Path' full of monoidal values with access to the key.
+mapWithKey :: Monoid b => (Int -> a -> b) -> Path a -> Path b
 mapWithKey f = go where
   go Nil = Nil
   go (Cons _ n k t ts) = consN n k (goT t) (go ts)
@@ -108,10 +112,14 @@ mapWithKey f = go where
   goT (Bin _ k a l r) = bin k (f k a) (goT l) (goT r)
 {-# INLINE mapWithKey #-}
 
--- | @mapHom f@ assumes that f is a monoid homomorphism, that is to say, you must ensure
+-- | /O(n)/ Re-annotate a 'Path' full of monoidal values/
 --
--- > f a `mappend` f b = f (a `mappend` b)
--- > f mempty = mempty
+-- Unlike 'map', @'mapHom' f@ assumes that f is a 'Monoid' homomorphism, that is to say you must ensure
+--
+-- @
+-- f a `'mappend'` f b = f (a `'mappend'` b)
+-- f 'mempty' = 'mempty'
+-- @
 mapHom :: (a -> b) -> Path a -> Path b
 mapHom f = go where
   go Nil               = Nil
@@ -120,16 +128,19 @@ mapHom f = go where
   goT (Bin m k a l r)  = Bin (f m) k (f a) (goT l) (goT r)
 {-# INLINE mapHom #-}
 
+-- | Convert a 'Path' to a list of @(ID, value)@ pairs.
 toList :: Path a -> [(Int,a)]
 toList Nil = []
 toList (Cons _ _ _ t ts)  = go t (toList ts) where
   go (Tip k a) xs       = (k,a) : xs
   go (Bin _ k a l r) xs = (k,a) : go l (go r xs)
 
+-- | Build a 'Path' from a list of @(ID, value)@ pairs.
 fromList :: Monoid a => [(Int,a)] -> Path a
 fromList [] = Nil
 fromList ((k,a):xs) = cons k a (fromList xs)
 
+-- | Traverse a 'Path' with access to the node IDs.
 traverseWithKey :: (Applicative f, Monoid b) => (Int -> a -> f b) -> Path a -> f (Path b)
 traverseWithKey f = go where
   go Nil = pure Nil
@@ -138,6 +149,7 @@ traverseWithKey f = go where
   goT (Bin _ k a l r)  = bin k <$> f k a <*> goT l <*> goT r
 {-# INLINE traverseWithKey #-}
 
+-- | Traverse a 'Path' yielding a new monoidal annotation.
 traverse :: (Applicative f, Monoid b) => (a -> f b) -> Path a -> f (Path b)
 traverse f = go where
   go Nil = pure Nil
@@ -146,42 +158,46 @@ traverse f = go where
   goT (Bin _ k a l r)  = bin k <$> f a <*> goT l <*> goT r
 {-# INLINE traverse #-}
 
--- | The empty path
+-- | The empty 'Path'
 empty :: Path a
 empty = Nil
 {-# INLINE empty #-}
 
--- | /O(1)/
+-- | /O(1)/ Determine the 'length' of a 'Path'.
 length :: Path a -> Int
 length Nil = 0
 length (Cons _ n _ _ _) = n
 {-# INLINE length #-}
 
--- | /O(1)/
+-- | /O(1)/ Returns 'True' iff the path is 'empty'.
 null :: Path a -> Bool
 null Nil = True
 null _ = False
 {-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
+--
+-- Extend the 'Path' with a new node ID and value.
 cons :: Monoid a => Int -> a -> Path a -> Path a
 cons k a (Cons m n w t (Cons _ _ w' t2 ts)) | w == w' = Cons (a <> m) (n + 1) (2 * w + 1) (bin k a t t2) ts
 cons k a ts = Cons (a <> measure ts) (length ts + 1) 1 (Tip k a) ts
 {-# INLINE cons #-}
 
+-- | /O(1)/ Extract the node ID and value from the newest node on the 'Path'.
 uncons :: Monoid a => Path a -> Maybe (Int, a, Path a)
 uncons Nil = Nothing
 uncons (Cons _ _ _ (Tip k a) ts) = Just (k, a, ts)
 uncons (Cons _ _ w (Bin _ k a l r) ts) = Just (k, a, consT w2 l (consT w2 r ts)) where w2 = div w 2
 {-# INLINE uncons #-}
 
+-- | /O(1)/ Extract the node ID and value from the newest node on the 'Path', slightly faster than 'uncons'.
 view :: Monoid a => Path a -> View Path a
 view Nil = Root
 view (Cons _ _ _ (Tip k a) ts) = Node k a ts
 view (Cons _ _ w (Bin _ k a l r) ts) = Node k a (consT w2 l (consT w2 r ts)) where w2 = div w 2
 {-# INLINE view #-}
 
--- | /O(log (h - k))/ to @keep k@ elements of path of height @h@, and provide a monoidal summary of the dropped elements
+-- | /O(log (h - k))/ to keep @k@ elements of 'Path' of 'length' @h@, and provide a monoidal summary of the dropped elements
 mkeep :: Monoid a => Int -> Path a -> (a, Path a)
 mkeep = go mempty where
   go as _ Nil = (as, Nil)
@@ -201,22 +217,22 @@ mkeep = go mempty where
   goT as _ _ _ ts = (as, ts)
 {-# INLINE mkeep #-}
 
--- | /O(log (h - k))/ to @keep k@ elements of path of height @h@
+-- | /O(log (h - k))/ to @'keep' k@ elements of 'Path' of 'length' @h@
 keep :: Monoid a => Int -> Path a -> Path a
 keep k xs = snd (mkeep k xs)
 {-# INLINE keep #-}
 
--- | /O(log k)/ to @drop k@ elements from a path
+-- | /O(log k)/ to @'drop' k@ elements from a 'Path'
 drop :: Monoid a => Int -> Path a -> Path a
 drop k xs = snd (mdrop k xs)
 {-# INLINE drop #-}
 
--- | /O(log k)/ to @drop k@ elements from a path and provide a monoidal summary of the dropped elements
+-- | /O(log k)/ to drop @k@ elements from a 'Path' and provide a monoidal summary of the dropped elements
 mdrop :: Monoid a => Int -> Path a -> (a, Path a)
 mdrop k xs = mkeep (length xs - k) xs
 {-# INLINE mdrop #-}
 
--- /O(log h)/ @xs `isAncestorOf` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
+-- | /O(log h)/ @xs `'isAncestorOf'` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
 isAncestorOf :: Monoid b => Path a -> Path b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
 

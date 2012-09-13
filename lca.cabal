@@ -1,6 +1,6 @@
 name:          lca
 category:      Algorithms, Data Structures
-version:       0.2.1
+version:       0.2.2
 license:       BSD3
 cabal-version: >= 1.6
 license-file:  LICENSE
@@ -10,8 +10,14 @@ stability:     provisional
 homepage:      http://github.com/ekmett/lca/
 bug-reports:   http://github.com/ekmett/lca/issues
 copyright:     Copyright (C) 2011-2012 Edward A. Kmett
-synopsis:      O(log n) persistent on-line lowest common ancestor calculation without preprocessing with optional monoidal annotations
-description:   O(log n) persistent on-line lowest common ancestor calculation without preprocessing with optional monoidal annotations
+synopsis:      O(log n) persistent on-line lowest common ancestor calculation without preprocessing
+description:
+  This library implements the technique described in my talk
+  .
+  <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
+  .
+  to improve the known asymptotic bounds on /online/ lowest common ancestor search from /O(n)/ to
+  /O(log n)/ without preprocessing and with optional monoidal annotations.
 build-type:    Simple
 
 extra-source-files: .travis.yml
