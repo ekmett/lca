@@ -12,8 +12,23 @@
 -- by compressing the spine of the paths using a skew-binary random access
 -- list.
 --
+-- This library implements the technique described in my talk
+--
+-- <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
+--
+-- to improve the known asymptotic bounds on both online lowest common ancestor search
+--
+-- <http://en.wikipedia.org/wiki/Lowest_common_ancestor>
+--
+-- and the online level ancestor problem:
+--
+-- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
+--
 -- Algorithms used here assume that the key values chosen for @k@ are
 -- globally unique.
+--
+-- This version provides access to a monoidal \"summary\" of the
+-- elided path for many operations.
 --
 ----------------------------------------------------------------------------
 module Data.LCA.Online.Monoidal
@@ -198,6 +213,7 @@ view (Cons _ _ w (Bin _ k a l r) ts) = Node k a (consT w2 l (consT w2 r ts)) whe
 {-# INLINE view #-}
 
 -- | /O(log (h - k))/ to keep @k@ elements of 'Path' of 'length' @h@, and provide a monoidal summary of the dropped elements
+--
 mkeep :: Monoid a => Int -> Path a -> (a, Path a)
 mkeep = go mempty where
   go as _ Nil = (as, Nil)
@@ -218,6 +234,11 @@ mkeep = go mempty where
 {-# INLINE mkeep #-}
 
 -- | /O(log (h - k))/ to @'keep' k@ elements of 'Path' of 'length' @h@
+--
+-- This solves the online version of the \"level ancestor problem\" with no preprocessing in /O(log h)/ time,
+-- improving known complexity bounds.
+--
+-- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
 keep :: Monoid a => Int -> Path a -> Path a
 keep k xs = snd (mkeep k xs)
 {-# INLINE keep #-}

@@ -16,7 +16,13 @@
 --
 -- <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
 --
--- to improve the known asymptotic bounds on online lowest common ancestor search.
+-- to improve the known asymptotic bounds on both online lowest common ancestor search
+--
+-- <http://en.wikipedia.org/wiki/Lowest_common_ancestor>
+--
+-- and the online level ancestor problem:
+--
+-- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
 --
 -- Algorithms used here assume that the key values chosen for @k@ are
 -- globally unique.
@@ -155,6 +161,11 @@ view (Cons _ w (Bin k a l r) ts) = Node k a (consT w2 l (consT w2 r ts)) where w
 {-# INLINE view #-}
 
 -- | /O(log (h - k))/ to @'keep' k@ elements of 'Path' of 'length' @h@
+--
+-- This solves the online version of the \"level ancestor problem\" with no preprocessing in /O(log h)/ time,
+-- improving known complexity bounds.
+--
+-- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
 keep :: Int -> Path a -> Path a
 keep = go where
   go _ Nil = Nil
