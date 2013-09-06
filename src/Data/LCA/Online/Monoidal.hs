@@ -264,6 +264,11 @@ Nil ~= Nil = True
 Cons _ _ _ s _ ~= Cons _ _ _ t _ = sameT s t
 _ ~= _ = False
 
+-- $doctest
+-- >>> let fromList' = fromList . fmap (flip (,) ())
+-- >>> length (lca (fromList' [1, 2, 3, 4, 5, 6]) (fromList' [7, 8, 3, 4, 5, 6]))
+-- 4
+
 -- | /O(log h)/ Compute the lowest common ancestor of two paths
 lca :: (Monoid a, Monoid b) => Path a -> Path b -> Path a
 lca xs ys = zs where (_, zs, _, _) = mlca xs ys
@@ -286,7 +291,7 @@ mlca xs0 ys0 = case compare nxs nys of
 
     goT as bs w (Bin _ _ a la ra) (Bin _ _ b lb rb) pa pb
       | sameT la lb = (as <> a, consT w2 la (consT w2 ra pa), bs <> b, consT w2 lb (consT w2 rb pb))
-      | sameT ra rb = goT (as <> a) (bs <> b) w2 la lb (consT w ra pa) (consT w rb pb)
+      | sameT ra rb = goT (as <> a) (bs <> b) w2 la lb (consT w2 ra pa) (consT w2 rb pb)
       | otherwise   = goT (as <> a <> measureT la) (bs <> b <> measureT lb) w2 ra rb pa pb
       where w2 = div w 2
     goT as bs _ ta tb pa pb = (as <> measureT ta, pa, bs <> measureT tb, pb)
