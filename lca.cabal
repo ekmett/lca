@@ -2,7 +2,7 @@ name:          lca
 category:      Algorithms, Data Structures
 version:       0.2.4
 license:       BSD3
-cabal-version: >= 1.10
+cabal-version: >= 1.8
 license-file:  LICENSE
 author:        Edward A. Kmett
 maintainer:    Edward A. Kmett <ekmett@gmail.com>
@@ -29,6 +29,7 @@ source-repository head
 
 library
   hs-source-dirs: src
+
 
   build-depends:
     base >= 4 && < 5
