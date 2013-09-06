@@ -1,3 +1,7 @@
+0.2.4
+-----
+* Fixed a bug in path reconstruction
+
 0.2.3
 -----
 * Improved documentation to also note that this package also provides an improvement in the online version of the [level ancestor problem](http://en.wikipedia.org/wiki/Level_ancestor_problem).
