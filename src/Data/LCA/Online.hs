@@ -202,6 +202,11 @@ Cons _ _ s _ ~= Cons _ _ t _ = sameT s t
 _            ~= _            = False
 {-# INLINE (~=) #-}
 
+-- $doctest
+-- >>> let fromList' = fromList . map (flip (,) ())
+-- >>> length (lca (fromList' [1, 2, 3, 4, 5, 6]) (fromList' [7, 8, 3, 4, 5, 6]))
+-- 4
+
 -- | /O(log h)/ Compute the lowest common ancestor of two paths.
 lca :: Path a -> Path b -> Path a
 lca xs0 ys0 = case compare nxs nys of
@@ -219,7 +224,7 @@ lca xs0 ys0 = case compare nxs nys of
 
     goT w (Bin _ _ la ra) (Bin _ _ lb rb) ts
       | sameT la lb = consT w2 la (consT w2 ra ts)
-      | sameT ra rb = goT w2 la lb (consT w ra ts)
+      | sameT ra rb = goT w2 la lb (consT w2 ra ts)
       | otherwise   = goT w2 ra rb ts
       where w2 = div w 2
     goT _ _ _ ts = ts

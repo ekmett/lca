@@ -40,3 +40,10 @@ library
     Data.LCA.View
 
   ghc-options: -Wall -O2 -fspec-constr
+
+test-suite doctests
+  type:           exitcode-stdio-1.0
+  main-is:        doctests.hs
+  ghc-options:    -Wall -threaded
+  hs-source-dirs: tests
+  build-depends:  base, doctest >= 0.8
