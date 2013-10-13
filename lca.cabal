@@ -30,7 +30,6 @@ source-repository head
 library
   hs-source-dirs: src
 
-
   build-depends:
     base >= 4 && < 5
 
