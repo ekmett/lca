@@ -241,12 +241,12 @@ mkeep f = go mempty where
 --
 -- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
 keep :: Monoid a => Int -> Path a -> Path a
-keep k xs = snd (mkeep id k xs)
+keep k xs = snd (mkeep (\_ -> ()) k xs)
 {-# INLINE keep #-}
 
 -- | /O(log k)/ to @'drop' k@ elements from a 'Path'
 drop :: Monoid a => Int -> Path a -> Path a
-drop k xs = snd (mdrop id k xs)
+drop k xs = snd (mdrop (\_ -> ()) k xs)
 {-# INLINE drop #-}
 
 -- | /O(log k)/ to drop @k@ elements from a 'Path' and provide a monoidal summary of the dropped elements

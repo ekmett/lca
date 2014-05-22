@@ -1,3 +1,8 @@
+0.3
+---
+* Modified `mkeep`, `mdrop` and `mlca` to parameterize them by monoid homomorphisms. This permits cheaper summaries to be calculated over the dropped
+  path, when only a portion of the information in the path is required.
+
 0.2.4
 -----
 * Fixed a bug in path reconstruction
