@@ -129,7 +129,7 @@ mapWithKey f = go where
 
 -- | /O(n)/ Re-annotate a 'Path' full of monoidal values/
 --
--- Unlike 'map', @'mapHom' f@ assumes that f is a 'Monoid' homomorphism, that is to say you must ensure
+-- Unlike 'map', @'mapHom' f@ assumes that @f@ is a 'Monoid' homomorphism, that is to say you must ensure
 --
 -- @
 -- f a `'mappend'` f b = f (a `'mappend'` b)
@@ -213,22 +213,23 @@ view (Cons _ _ w (Bin _ k a l r) ts) = Node k a (consT w2 l (consT w2 r ts)) whe
 {-# INLINE view #-}
 
 -- | /O(log (h - k))/ to keep @k@ elements of 'Path' of 'length' @h@, and provide a monoidal summary of the dropped elements
+-- using a supplied monoid homomorphism.
 --
-mkeep :: Monoid a => Int -> Path a -> (a, Path a)
-mkeep = go mempty where
+mkeep :: (Monoid a, Monoid b) => (a -> b) -> Int -> Path a -> (b, Path a)
+mkeep f = go mempty where
   go as _ Nil = (as, Nil)
   go as k xs@(Cons _ n w t ts)
     | k >= n    = (as, xs)
     | otherwise = case compare k (n - w) of
       GT -> goT as (k - n + w) w t ts
-      EQ -> (as <> measureT t, ts)
-      LT -> go (as <> measureT t) k ts
+      EQ -> (as <> f (measureT t), ts)
+      LT -> go (as <> f (measureT t)) k ts
   -- goT :: Monoid a => Int -> Int -> Tree a -> Path a -> Path a
   goT as n w (Bin _ _ a l r) ts = case compare n w2 of
-    LT              -> goT (as <> a <> measureT l) n w2 r ts
-    EQ              -> (as <> a <> measureT l, consT w2 r ts)
-    GT | n == w - 1 -> (as <> a, consT w2 l (consT w2 r ts))
-       | otherwise  -> goT (as <> a) (n - w2) w2 l (consT w2 r ts)
+    LT              -> goT (as <> f a <> f (measureT l)) n w2 r ts
+    EQ              -> (as <> f a <> f (measureT l), consT w2 r ts)
+    GT | n == w - 1 -> (as <> f a, consT w2 l (consT w2 r ts))
+       | otherwise  -> goT (as <> f a) (n - w2) w2 l (consT w2 r ts)
     where w2 = div w 2
   goT as _ _ _ ts = (as, ts)
 {-# INLINE mkeep #-}
@@ -240,17 +241,18 @@ mkeep = go mempty where
 --
 -- <http://en.wikipedia.org/wiki/Level_ancestor_problem>
 keep :: Monoid a => Int -> Path a -> Path a
-keep k xs = snd (mkeep k xs)
+keep k xs = snd (mkeep id k xs)
 {-# INLINE keep #-}
 
 -- | /O(log k)/ to @'drop' k@ elements from a 'Path'
 drop :: Monoid a => Int -> Path a -> Path a
-drop k xs = snd (mdrop k xs)
+drop k xs = snd (mdrop id k xs)
 {-# INLINE drop #-}
 
 -- | /O(log k)/ to drop @k@ elements from a 'Path' and provide a monoidal summary of the dropped elements
-mdrop :: Monoid a => Int -> Path a -> (a, Path a)
-mdrop k xs = mkeep (length xs - k) xs
+-- using a suplied monoid homomorphism
+mdrop :: (Monoid a, Monoid b) => (a -> b) -> Int -> Path a -> (b, Path a)
+mdrop f k xs = mkeep f (length xs - k) xs
 {-# INLINE mdrop #-}
 
 -- | /O(log h)/ @xs `'isAncestorOf'` ys@ holds when @xs@ is a prefix starting at the root of path @ys@.
@@ -260,9 +262,9 @@ isAncestorOf xs ys = xs ~= keep (length xs) ys
 infix 4 ~=
 -- | /O(1)/ Compare to see if two trees have the same leaf key
 (~=) :: Path a -> Path b -> Bool
-Nil ~= Nil = True
+Nil            ~= Nil            = True
 Cons _ _ _ s _ ~= Cons _ _ _ t _ = sameT s t
-_ ~= _ = False
+_              ~= _              = False
 
 -- $doctest
 -- >>> let fromList' = fromList . fmap (flip (,) ())
@@ -271,14 +273,15 @@ _ ~= _ = False
 
 -- | /O(log h)/ Compute the lowest common ancestor of two paths
 lca :: (Monoid a, Monoid b) => Path a -> Path b -> Path a
-lca xs ys = zs where (_, zs, _, _) = mlca xs ys
+lca xs ys = zs where (_, zs, _, _) = mlca (\_ -> ()) (\_ -> ()) xs ys
 
--- | /O(log h)/ Compute the lowest common ancestor of two paths along with a monoidal summary of their respective tails.
-mlca :: (Monoid a, Monoid b) => Path a -> Path b -> (a, Path a, b, Path b)
-mlca xs0 ys0 = case compare nxs nys of
-  LT -> let (bs, ys) = mkeep nxs ys0 in go mempty bs xs0 ys
+-- | /O(log h)/ Compute the lowest common ancestor of two paths along with a monoidal summary of their respective tails using
+-- the supplied monoid homomorphisms.
+mlca :: (Monoid a, Monoid b, Monoid c, Monoid d) => (a -> c) -> (b -> d) -> Path a -> Path b -> (c, Path a, d, Path b)
+mlca f g xs0 ys0 = case compare nxs nys of
+  LT -> let (bs, ys) = mkeep g nxs ys0 in go mempty bs xs0 ys
   EQ -> go mempty mempty xs0 ys0
-  GT -> let (as, xs) = mkeep nys xs0 in go as mempty xs ys0
+  GT -> let (as, xs) = mkeep f nys xs0 in go as mempty xs ys0
   where
     nxs = length xs0
     nys = length ys0
@@ -286,13 +289,13 @@ mlca xs0 ys0 = case compare nxs nys of
     go as bs pa@(Cons _ _ w x xs) pb@(Cons _ _ _ y ys)
       | sameT x y = (as, pa, bs, pb)
       | xs ~= ys  = goT as bs w x y xs ys
-      | otherwise = go (as <> measureT x) (bs <> measureT y) xs ys
+      | otherwise = go (as <> f (measureT x)) (bs <> g (measureT y)) xs ys
     go as bs _ _ = (as, Nil, bs, Nil)
 
     goT as bs w (Bin _ _ a la ra) (Bin _ _ b lb rb) pa pb
-      | sameT la lb = (as <> a, consT w2 la (consT w2 ra pa), bs <> b, consT w2 lb (consT w2 rb pb))
-      | sameT ra rb = goT (as <> a) (bs <> b) w2 la lb (consT w2 ra pa) (consT w2 rb pb)
-      | otherwise   = goT (as <> a <> measureT la) (bs <> b <> measureT lb) w2 ra rb pa pb
+      | sameT la lb = (as <> f a, consT w2 la (consT w2 ra pa), bs <> g b, consT w2 lb (consT w2 rb pb))
+      | sameT ra rb = goT (as <> f a) (bs <> g b) w2 la lb (consT w2 ra pa) (consT w2 rb pb)
+      | otherwise   = goT (as <> f a <> f (measureT la)) (bs <> g b <> g (measureT lb)) w2 ra rb pa pb
       where w2 = div w 2
-    goT as bs _ ta tb pa pb = (as <> measureT ta, pa, bs <> measureT tb, pb)
+    goT as bs _ ta tb pa pb = (as <> f (measureT ta), pa, bs <> g (measureT tb), pb)
 {-# INLINE mlca #-}
