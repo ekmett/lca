@@ -97,6 +97,28 @@ data Path a
 instance Foldable Path where
   foldMap _ Nil = mempty
   foldMap f (Cons _ _ _ t ts) = foldMap f t <> foldMap f ts
+#if __GLASGOW_HASKELL__ >= 710
+  length Nil = 0
+  length (Cons _ n _ _ _) = n
+  {-# INLINE length #-}
+
+  null Nil = True
+  null _ = False
+  {-# INLINE null #-}
+#else
+
+-- | /O(1)/ Determine the 'length' of a 'Path'.
+length :: Path a -> Int
+length Nil = 0
+length (Cons _ n _ _ _) = n
+{-# INLINE length #-}
+
+-- | /O(1)/ Returns 'True' iff the path is 'empty'.
+null :: Path a -> Bool
+null Nil = True
+null _ = False
+{-# INLINE null #-}
+#endif
 
 -- | Extract a monoidal summary of a 'Path'.
 measure :: Monoid a => Path a -> a
@@ -177,18 +199,6 @@ traverse f = go where
 empty :: Path a
 empty = Nil
 {-# INLINE empty #-}
-
--- | /O(1)/ Determine the 'length' of a 'Path'.
-length :: Path a -> Int
-length Nil = 0
-length (Cons _ n _ _ _) = n
-{-# INLINE length #-}
-
--- | /O(1)/ Returns 'True' iff the path is 'empty'.
-null :: Path a -> Bool
-null Nil = True
-null _ = False
-{-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
 --
