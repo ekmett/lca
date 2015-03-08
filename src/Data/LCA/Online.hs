@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.LCA.Online
@@ -44,12 +45,22 @@ module Data.LCA.Online
   , (~=)
   ) where
 
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative hiding (empty)
 import Data.Foldable hiding (toList)
 import Data.Traversable
 import Data.Monoid
-import Prelude hiding (length, null, drop)
+#endif
+
 import Data.LCA.View
+
+import Prelude hiding
+  ( drop
+#if __GLASGOW_HASKELL__ < 710
+  , length
+  , null
+#endif
+  )
 
 -- | Complete binary trees
 data Tree a
@@ -91,6 +102,30 @@ instance Functor Path where
 instance Foldable Path where
   foldMap _ Nil = mempty
   foldMap f (Cons _ _ t ts) = foldMap f t `mappend` foldMap f ts
+#if __GLASGOW_HASKELL__ >= 710
+  length Nil = 0
+  length (Cons n _ _ _) = n
+  {-# INLINE length #-}
+
+  null Nil = True
+  null _ = False
+  {-# INLINE null #-}
+
+#else
+
+-- | /O(1)/ Determine the 'length' of a 'Path'.
+length :: Path a -> Int
+length Nil = 0
+length (Cons n _ _ _) = n
+{-# INLINE length #-}
+
+-- | /O(1)/ Returns 'True' iff the path is 'empty'.
+null :: Path a -> Bool
+null Nil = True
+null _ = False
+{-# INLINE null #-}
+
+#endif
 
 instance Traversable Path where
   traverse _ Nil = pure Nil
@@ -125,18 +160,6 @@ traverseWithKey f = go where
 empty :: Path a
 empty = Nil
 {-# INLINE empty #-}
-
--- | /O(1)/ Determine the 'length' of a 'Path'.
-length :: Path a -> Int
-length Nil = 0
-length (Cons n _ _ _) = n
-{-# INLINE length #-}
-
--- | /O(1)/ Returns 'True' iff the path is 'empty'.
-null :: Path a -> Bool
-null Nil = True
-null _ = False
-{-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
 --
