@@ -53,7 +53,16 @@ module Data.LCA.Online.Monoidal
 import Control.Applicative hiding (empty)
 import Data.Foldable hiding (toList)
 import Data.Monoid (Monoid(..))
-import Prelude hiding (length, null, drop, map)
+import Prelude hiding
+  ( drop
+  , map
+#if __GLASGOW_HASKELL__ < 710
+  , length
+  , null
+#else
+  , traverse
+#endif
+  )
 import Data.LCA.View
 
 infixl 6 <>
