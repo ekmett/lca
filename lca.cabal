@@ -21,7 +21,7 @@ description:
   <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
 build-type:    Simple
 
-extra-source-files: .travis.yml README.md CHANGELOG.md
+extra-source-files: .travis.yml README.md CHANGELOG.md HLint.hs
 
 source-repository head
   type: git
