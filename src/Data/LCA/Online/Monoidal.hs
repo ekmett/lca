@@ -52,7 +52,11 @@ module Data.LCA.Online.Monoidal
 
 import Control.Applicative hiding (empty)
 import Data.Foldable hiding (toList)
+
+#if __GLASGOW_HASKELL__ < 710
 import Data.Monoid (Monoid(..))
+#endif
+
 import Prelude hiding
   ( drop
   , map
