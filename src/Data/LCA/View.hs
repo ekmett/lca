@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.LCA.View
@@ -10,10 +11,12 @@
 -----------------------------------------------------------------------------
 module Data.LCA.View (View(..)) where
 
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 import Data.Monoid
+#endif
 
 -- | Provides a consistent 'View' for peeling off the bottom node of a path.
 data View f a
