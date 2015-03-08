@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.LCA.Online.Naive
@@ -30,10 +31,20 @@ module Data.LCA.Online.Naive
 
 import Control.Applicative hiding (empty)
 import Data.Foldable hiding (toList)
-import Data.Traversable
-import Prelude hiding (length, null, drop)
-import qualified Prelude
 import Data.LCA.View
+
+#if __GLASGOW_HASKELL__ < 710
+import Data.Traversable
+#endif
+
+import qualified Prelude
+import Prelude hiding
+  ( drop
+#if __GLASGOW_HASKELL__ < 710
+  , length
+  , null
+#endif
+  )
 
 -- | An uncompressed 'Path' with memoized length.
 data Path a = Path {-# UNPACK #-} !Int [(Int,a)]
@@ -54,6 +65,23 @@ instance Functor Path where
 
 instance Foldable Path where
   foldMap f (Path _ xs) = foldMap (f . snd) xs
+#if __GLASGOW_HASKELL__ >= 710
+  length (Path n _) = n
+  null (Path n _) = n == 0
+
+#else
+
+-- | /O(1)/ Determine the length of a 'Path'.
+length :: Path a -> Int
+length (Path n _) = n
+{-# INLINE length #-}
+
+-- | /O(1)/ Returns 'True' iff the 'Path' is 'empty'.
+null :: Path a -> Bool
+null (Path n _) = n == 0
+{-# INLINE null #-}
+
+#endif
 
 instance Traversable Path where
   traverse f (Path n xs) = Path n <$> traverse (\(k,a) -> (,) k <$> f a) xs
@@ -66,16 +94,6 @@ traverseWithKey f (Path n xs) = Path n <$> traverse (\(k,a) -> (,) k <$> f k a) 
 -- | The empty 'Path'
 empty :: Path a
 empty = Path 0 []
-
--- | /O(1)/ Determine the length of a 'Path'.
-length :: Path a -> Int
-length (Path n _) = n
-{-# INLINE length #-}
-
--- | /O(1)/ Returns 'True' iff the 'Path' is 'empty'.
-null :: Path a -> Bool
-null (Path n _) = n == 0
-{-# INLINE null #-}
 
 -- | /O(1)/ Invariant: most operations assume that the keys @k@ are globally unique
 --
