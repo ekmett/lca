@@ -1,7 +1,8 @@
 0.3
 ---
-* Modified `mkeep`, `mdrop` and `mlca` to parameterize them by monoid homomorphisms. This permits cheaper summaries to be calculated over the dropped
-  path, when only a portion of the information in the path is required.
+* Updated to build without warnings in the wake of GHC 7.10.
+* Use (and re-export) the new overloaded `null` and `length` from Prelude on GHC 7.10+
+* Modified `mkeep`, `mdrop` and `mlca` to parameterize them by monoid homomorphisms. This permits cheaper summaries to be calculated over the dropped path, when only a portion of the information in the path is required.
 
 0.2.4
 -----
