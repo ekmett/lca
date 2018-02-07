@@ -10,7 +10,7 @@ stability:     provisional
 homepage:      http://github.com/ekmett/lca/
 bug-reports:   http://github.com/ekmett/lca/issues
 copyright:     Copyright (C) 2011-2015 Edward A. Kmett
-synopsis:      O(log n) persistent on-line lowest common ancestor calculation without preprocessing
+synopsis:      O(log n) persistent online lowest common ancestor search without preprocessing
 description:
   This package provides a reference implementation of my skew binary random access algorithm for performing an /online/ lowest common ancestor search (and online level ancestor search) in logarithmic time without preprocessing. This improves the previous known asymptotic bound for both of these problems from /O(h)/ to /O(log h)/, where /h/ is the height of the tree. Mostly importantly this bound is completely independent of the width or overall size of the tree, enabling you to calculate lowest common ancestors in a distributed fashion with good locality.
   .
@@ -20,6 +20,15 @@ description:
   .
   <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
 build-type:    Simple
+tested-with:   GHC == 7.0.4
+             , GHC == 7.2.2
+             , GHC == 7.4.2
+             , GHC == 7.6.3
+             , GHC == 7.8.4
+             , GHC == 7.10.3
+             , GHC == 8.0.2
+             , GHC == 8.2.2
+             , GHC == 8.4.1
 
 extra-source-files: .travis.yml README.md CHANGELOG.md HLint.hs
 
