@@ -1,6 +1,7 @@
 next [????.??.??]
 -----------------
 * Fix the build with GHC 8.4.
+* Use `cabal-doctest` for the test suite.
 
 0.3
 ---

@@ -32,6 +32,12 @@ tested-with:   GHC == 7.0.4
 
 extra-source-files: .travis.yml README.md CHANGELOG.md HLint.hs
 
+custom-setup
+  setup-depends:
+    base          >= 4.3 && <5,
+    Cabal         >= 1.10,
+    cabal-doctest >= 1 && <1.1
+
 source-repository head
   type: git
   location: git://github.com/ekmett/lca.git
@@ -55,4 +61,4 @@ test-suite doctests
   main-is:        doctests.hs
   ghc-options:    -Wall -threaded
   hs-source-dirs: tests
-  build-depends:  base, doctest >= 0.8
+  build-depends:  base, doctest >= 0.8, lca
