@@ -1,7 +1,7 @@
 lca: _O(log h)_ Online Lowest Common Ancestor Search
 ====================================================
 
-[![Build Status](https://secure.travis-ci.org/ekmett/lca.png?branch=master)](http://travis-ci.org/ekmett/lca)
+[![Hackage](https://img.shields.io/hackage/v/lca.svg)](https://hackage.haskell.org/package/lca) [![Build Status](https://secure.travis-ci.org/ekmett/lca.png?branch=master)](http://travis-ci.org/ekmett/lca)
 
 This package provides a reference implementation of my skew binary random access algorithm for performing an
 online lowest common ancestor in logarithmic time _without preprocessing_. This improves the previous known
