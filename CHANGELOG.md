@@ -1,5 +1,5 @@
-next [????.??.??]
------------------
+0.3.1 [2018.02.06]
+------------------
 * Fix the build with GHC 8.4.
 * Use `cabal-doctest` for the test suite.
 
