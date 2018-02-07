@@ -19,7 +19,7 @@ description:
   Slides are available from
   .
   <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
-build-type:    Simple
+build-type:    Custom
 tested-with:   GHC == 7.0.4
              , GHC == 7.2.2
              , GHC == 7.4.2
@@ -30,7 +30,7 @@ tested-with:   GHC == 7.0.4
              , GHC == 8.2.2
              , GHC == 8.4.1
 
-extra-source-files: .travis.yml README.md CHANGELOG.md HLint.hs
+extra-source-files: .travis.yml README.md CHANGELOG.md HLint.hs Warning.hs
 
 custom-setup
   setup-depends:
