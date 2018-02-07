@@ -1,3 +1,7 @@
+next [????.??.??]
+-----------------
+* Fix the build with GHC 8.4.
+
 0.3
 ---
 * Updated to build without warnings in the wake of GHC 7.10.

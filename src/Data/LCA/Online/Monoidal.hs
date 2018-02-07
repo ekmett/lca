@@ -66,6 +66,9 @@ import Prelude hiding
 #else
   , traverse
 #endif
+#if MIN_VERSION_base(4,11,0)
+  , (<>)
+#endif
   )
 import Data.LCA.View
 
