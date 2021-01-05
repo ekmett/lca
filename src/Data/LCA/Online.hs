@@ -45,9 +45,10 @@ module Data.LCA.Online
   , (~=)
   ) where
 
+import qualified Data.Foldable as F
+
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative hiding (empty)
-import Data.Foldable hiding (toList)
 import Data.Traversable
 import Data.Monoid
 #endif
@@ -56,11 +57,12 @@ import Data.LCA.View
 
 import Prelude hiding
   ( drop
-#if __GLASGOW_HASKELL__ < 710
   , length
   , null
-#endif
   )
+
+-- $setup
+-- >>> let length = Data.LCA.Online.length
 
 -- | Complete binary trees
 data Tree a
@@ -72,8 +74,8 @@ instance Functor Tree where
   fmap f (Bin n a l r) = Bin n (f a) (fmap f l) (fmap f r)
   fmap f (Tip n a)     = Tip n (f a)
 
-instance Foldable Tree where
-  foldMap f (Bin _ a l r) = f a `mappend` foldMap f l `mappend` foldMap f r
+instance F.Foldable Tree where
+  foldMap f (Bin _ a l r) = f a `mappend` F.foldMap f l `mappend` F.foldMap f r
   foldMap f (Tip _ a)     = f a
 
 instance Traversable Tree where
@@ -99,19 +101,14 @@ instance Functor Path where
   fmap _ Nil = Nil
   fmap f (Cons n k t ts) = Cons n k (fmap f t) (fmap f ts)
 
-instance Foldable Path where
+instance F.Foldable Path where
   foldMap _ Nil = mempty
-  foldMap f (Cons _ _ t ts) = foldMap f t `mappend` foldMap f ts
+  foldMap f (Cons _ _ t ts) = F.foldMap f t `mappend` F.foldMap f ts
+
 #if __GLASGOW_HASKELL__ >= 710
-  length Nil = 0
-  length (Cons n _ _ _) = n
-  {-# INLINE length #-}
-
-  null Nil = True
-  null _ = False
-  {-# INLINE null #-}
-
-#else
+  length = length
+  null   = null
+#endif
 
 -- | /O(1)/ Determine the 'length' of a 'Path'.
 length :: Path a -> Int
@@ -124,8 +121,6 @@ null :: Path a -> Bool
 null Nil = True
 null _ = False
 {-# INLINE null #-}
-
-#endif
 
 instance Traversable Path where
   traverse _ Nil = pure Nil
@@ -225,12 +220,12 @@ Cons _ _ s _ ~= Cons _ _ t _ = sameT s t
 _            ~= _            = False
 {-# INLINE (~=) #-}
 
--- $doctest
+-- | /O(log h)/ Compute the lowest common ancestor of two paths.
+--
 -- >>> let fromList' = fromList . map (flip (,) ())
 -- >>> length (lca (fromList' [1, 2, 3, 4, 5, 6]) (fromList' [7, 8, 3, 4, 5, 6]))
 -- 4
-
--- | /O(log h)/ Compute the lowest common ancestor of two paths.
+--
 lca :: Path a -> Path b -> Path a
 lca xs0 ys0 = case compare nxs nys of
     LT -> go xs0 (keep nxs ys0)
