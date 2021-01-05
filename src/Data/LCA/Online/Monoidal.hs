@@ -287,7 +287,7 @@ isAncestorOf :: Monoid b => Path a -> Path b -> Bool
 isAncestorOf xs ys = xs ~= keep (length xs) ys
 
 infix 4 ~=
--- | /O(1)/ Compare to see if two trees have the same leaf key
+-- | /O(1)/ Compare to see if two trees have the same root key
 (~=) :: Path a -> Path b -> Bool
 Nil            ~= Nil            = True
 Cons _ _ _ s _ ~= Cons _ _ _ t _ = sameT s t

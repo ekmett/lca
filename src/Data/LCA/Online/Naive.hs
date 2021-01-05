@@ -134,7 +134,7 @@ isAncestorOf xs ys = xs ~= keep (length xs) ys
 {-# INLINE isAncestorOf #-}
 
 infix 4 ~=
--- | /O(1)/ Compare to see if two trees have the same leaf key
+-- | /O(1)/ Compare to see if two trees have the same root key
 (~=) :: Path a -> Path b -> Bool
 Path _ []        ~= Path _ []        = True
 Path _ ((i,_):_) ~= Path _ ((j,_):_) = i == j
