@@ -30,7 +30,7 @@ module Data.LCA.Online.Naive
   ) where
 
 import Control.Applicative hiding (empty)
-import Data.Foldable hiding (toList)
+import qualified Data.Foldable as F
 import Data.LCA.View
 
 #if __GLASGOW_HASKELL__ < 710
@@ -40,11 +40,12 @@ import Data.Traversable
 import qualified Prelude
 import Prelude hiding
   ( drop
-#if __GLASGOW_HASKELL__ < 710
   , length
   , null
-#endif
   )
+
+-- $setup
+-- >>> let length = Data.LCA.Online.Naive.length
 
 -- | An uncompressed 'Path' with memoized length.
 data Path a = Path {-# UNPACK #-} !Int [(Int,a)]
@@ -63,13 +64,12 @@ fromList xs = Path (Prelude.length xs) xs
 instance Functor Path where
   fmap f (Path n xs) = Path n [ (k, f a) | (k,a) <- xs]
 
-instance Foldable Path where
-  foldMap f (Path _ xs) = foldMap (f . snd) xs
+instance F.Foldable Path where
+  foldMap f (Path _ xs) = F.foldMap (f . snd) xs
 #if __GLASGOW_HASKELL__ >= 710
-  length (Path n _) = n
-  null (Path n _) = n == 0
-
-#else
+  length = length
+  null   = null
+#endif
 
 -- | /O(1)/ Determine the length of a 'Path'.
 length :: Path a -> Int
@@ -80,8 +80,6 @@ length (Path n _) = n
 null :: Path a -> Bool
 null (Path n _) = n == 0
 {-# INLINE null #-}
-
-#endif
 
 instance Traversable Path where
   traverse f (Path n xs) = Path n <$> traverse (\(k,a) -> (,) k <$> f a) xs
@@ -142,6 +140,10 @@ _                ~= _                = False
 {-# INLINE (~=) #-}
 
 -- | /O(h)/ Compute the lowest common ancestor of two paths
+--
+-- >>> let fromList' = fromList . map (flip (,) ())
+-- >>> length (lca (fromList' [1, 2, 3, 4, 5, 6]) (fromList' [7, 8, 3, 4, 5, 6]))
+-- 4
 lca :: Path a -> Path b -> Path a
 lca xs0 ys0 = case compare nxs nys of
     LT -> go nxs (toList xs0) (toList (keep nxs ys0))

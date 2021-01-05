@@ -51,7 +51,7 @@ module Data.LCA.Online.Monoidal
   ) where
 
 import Control.Applicative hiding (empty)
-import Data.Foldable hiding (toList)
+import qualified Data.Foldable as F
 
 #if __GLASGOW_HASKELL__ < 710
 import Data.Monoid (Monoid(..))
@@ -60,9 +60,9 @@ import Data.Monoid (Monoid(..))
 import Prelude hiding
   ( drop
   , map
-#if __GLASGOW_HASKELL__ < 710
   , length
   , null
+#if __GLASGOW_HASKELL__ < 710
 #else
   , traverse
 #endif
@@ -71,6 +71,9 @@ import Prelude hiding
 #endif
   )
 import Data.LCA.View
+
+-- $setup
+-- >>> let length = Data.LCA.Online.Monoidal.length
 
 infixl 6 <>
 (<>) :: Monoid a => a -> a -> a
@@ -85,9 +88,9 @@ data Tree a
   | Tip {-# UNPACK #-} !Int a
   deriving (Show, Read)
 
-instance Foldable Tree where
+instance F.Foldable Tree where
   foldMap f (Tip _ a) = f a
-  foldMap f (Bin _ _ a l r) = f a <> foldMap f l <> foldMap f r
+  foldMap f (Bin _ _ a l r) = f a <> F.foldMap f l <> F.foldMap f r
 
 measureT :: Tree a -> a
 measureT (Tip _ a)       = a
@@ -111,18 +114,13 @@ data Path a
          (Path a)          -- @n - w@ elements in a linked list @ts@, of complete trees in ascending order by size
   deriving (Show, Read)
 
-instance Foldable Path where
+instance F.Foldable Path where
   foldMap _ Nil = mempty
-  foldMap f (Cons _ _ _ t ts) = foldMap f t <> foldMap f ts
+  foldMap f (Cons _ _ _ t ts) = F.foldMap f t <> F.foldMap f ts
 #if __GLASGOW_HASKELL__ >= 710
-  length Nil = 0
-  length (Cons _ n _ _ _) = n
-  {-# INLINE length #-}
-
-  null Nil = True
-  null _ = False
-  {-# INLINE null #-}
-#else
+  length = length
+  null   = null
+#endif
 
 -- | /O(1)/ Determine the 'length' of a 'Path'.
 length :: Path a -> Int
@@ -135,7 +133,6 @@ null :: Path a -> Bool
 null Nil = True
 null _ = False
 {-# INLINE null #-}
-#endif
 
 -- | Extract a monoidal summary of a 'Path'.
 measure :: Monoid a => Path a -> a
@@ -293,12 +290,12 @@ Nil            ~= Nil            = True
 Cons _ _ _ s _ ~= Cons _ _ _ t _ = sameT s t
 _              ~= _              = False
 
--- $doctest
+-- | /O(log h)/ Compute the lowest common ancestor of two paths
+--
 -- >>> let fromList' = fromList . fmap (flip (,) ())
 -- >>> length (lca (fromList' [1, 2, 3, 4, 5, 6]) (fromList' [7, 8, 3, 4, 5, 6]))
 -- 4
-
--- | /O(log h)/ Compute the lowest common ancestor of two paths
+--
 lca :: (Monoid a, Monoid b) => Path a -> Path b -> Path a
 lca xs ys = zs where (_, zs, _, _) = mlca (\_ -> ()) (\_ -> ()) xs ys
 

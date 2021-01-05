@@ -1,6 +1,6 @@
 name:          lca
 category:      Algorithms, Data Structures
-version:       0.3.1
+version:       0.4
 license:       BSD3
 cabal-version: >= 1.10
 license-file:  LICENSE
@@ -19,7 +19,7 @@ description:
   Slides are available from
   .
   <http://www.slideshare.net/ekmett/skewbinary-online-lowest-common-ancestor-search>
-build-type:    Custom
+build-type:    Simple
 tested-with:   GHC == 7.0.4
              , GHC == 7.2.2
              , GHC == 7.4.2
@@ -33,13 +33,7 @@ tested-with:   GHC == 7.0.4
              , GHC == 8.8.3
              , GHC == 8.10.1
 
-extra-source-files: .hlint.yaml README.md CHANGELOG.md Warning.hs
-
-custom-setup
-  setup-depends:
-    base          >= 4.3 && <5,
-    Cabal         >= 1.10,
-    cabal-doctest >= 1 && <1.1
+extra-source-files: .hlint.yaml README.md CHANGELOG.md
 
 source-repository head
   type: git
@@ -59,12 +53,4 @@ library
 
   ghc-options: -Wall -O2 -fspec-constr
 
-  default-language: Haskell2010
-
-test-suite doctests
-  type:           exitcode-stdio-1.0
-  main-is:        doctests.hs
-  ghc-options:    -Wall -threaded
-  hs-source-dirs: tests
-  build-depends:  base, doctest >= 0.8, lca
   default-language: Haskell2010
