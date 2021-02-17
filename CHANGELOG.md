@@ -1,5 +1,5 @@
-0.4 [yyyy.mm.dd]
------------------
+0.4 [2021.02.17]
+----------------
 * `lca` now always exports `null` and `length` functions that are always
   specialized to `Path`, i.e.,
 
