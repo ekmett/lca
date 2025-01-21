@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.LCA.Online.Naive
@@ -33,10 +32,6 @@ import Control.Applicative hiding (empty)
 import qualified Data.Foldable as F
 import Data.LCA.View
 
-#if __GLASGOW_HASKELL__ < 710
-import Data.Traversable
-#endif
-
 import qualified Prelude
 import Prelude hiding
   ( drop
@@ -66,10 +61,8 @@ instance Functor Path where
 
 instance F.Foldable Path where
   foldMap f (Path _ xs) = F.foldMap (f . snd) xs
-#if __GLASGOW_HASKELL__ >= 710
   length = length
   null   = null
-#endif
 
 -- | /O(1)/ Determine the length of a 'Path'.
 length :: Path a -> Int

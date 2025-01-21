@@ -53,19 +53,12 @@ module Data.LCA.Online.Monoidal
 import Control.Applicative hiding (empty)
 import qualified Data.Foldable as F
 
-#if __GLASGOW_HASKELL__ < 710
-import Data.Monoid (Monoid(..))
-#endif
-
 import Prelude hiding
   ( drop
   , map
   , length
   , null
-#if __GLASGOW_HASKELL__ < 710
-#else
   , traverse
-#endif
 #if MIN_VERSION_base(4,11,0)
   , (<>)
 #endif
@@ -117,10 +110,8 @@ data Path a
 instance F.Foldable Path where
   foldMap _ Nil = mempty
   foldMap f (Cons _ _ _ t ts) = F.foldMap f t <> F.foldMap f ts
-#if __GLASGOW_HASKELL__ >= 710
   length = length
   null   = null
-#endif
 
 -- | /O(1)/ Determine the 'length' of a 'Path'.
 length :: Path a -> Int
