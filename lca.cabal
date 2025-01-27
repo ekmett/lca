@@ -44,13 +44,15 @@ library
   hs-source-dirs: src
 
   build-depends:
-    base >= 4.9 && < 5
+    base >= 4.9 && < 5,
+    containers
 
   exposed-modules:
     Data.LCA.Online
     Data.LCA.Online.Monoidal
     Data.LCA.Online.Naive
     Data.LCA.View
+    Data.LSCA
 
   ghc-options: -Wall -O2 -fspec-constr
 
